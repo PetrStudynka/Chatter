@@ -1,0 +1,3 @@
+# Chatter
+
+CLI chat app
