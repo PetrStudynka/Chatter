@@ -8,14 +8,25 @@ use std::time::Duration;
 use std::io::*;
 use thread::sleep;
 
-const MSG_SIZE: usize = 256;
+const MSG_SIZE: usize = 1;
 const MAX_CLIENTS: usize = 5;
 
-#[allow(dead_code)]
+const PORT: usize = 33333;
+
 fn main() {
-    let listener = TcpListener::bind("127.0.0.1:33333").unwrap();
+
+    let args: Vec<String> = std::env::args().collect();
+
+
+    if args.len() < 2 {
+        panic!("IP addr must be specified");
+    }
+
+    let addr = format!("{}:{}",args[1].to_owned(),PORT);
+
+    let listener = TcpListener::bind(addr).unwrap();
     let (tx, rx) = channel::<TcpStream>();
-    let mut clients: Vec<TcpStream> = Vec::with_capacity(5);
+    let mut clients: Vec<TcpStream> = Vec::with_capacity(MAX_CLIENTS);
     let mut buffer = [0; MSG_SIZE];
 
     thread::spawn(move || loop {
@@ -23,7 +34,11 @@ fn main() {
         match rx.try_recv() {
             Ok(stream) => {
                 stream.set_nonblocking(true).unwrap();
-                clients.push(stream)
+                if clients.len() <= MAX_CLIENTS {
+                    clients.push(stream)
+                } else {
+                    //TODO full capacity
+                }
             },
             Err(TryRecvError::Empty) => {},
             Err(TryRecvError::Disconnected) => {
@@ -31,11 +46,24 @@ fn main() {
             }
         }
 
-        if clients.len() > 0 {
+        if clients.len() > 1 {
             for (i,mut client) in &mut clients.iter().enumerate() {
                 match client.read_exact(&mut buffer) {
                     Ok(_) => {
-                        println!("msg: {}", String::from_utf8(buffer.to_vec()).unwrap());
+                        let count = buffer[0] as usize;
+                        let mut msg_buffer = vec![0;count]; 
+                        client.read_exact(&mut msg_buffer).unwrap();
+
+                        let mut result_msg: Vec<u8> = Vec::with_capacity(count);
+                        result_msg.push(count as u8);
+                        result_msg.append(&mut msg_buffer);
+                        
+                        clients.iter().enumerate().for_each(|(j, mut stream)| {
+                             if i != j {
+                                 stream.write_all(&result_msg).unwrap();
+                             }
+                        });             
+
                     }
                     Err(e) if e.kind() == ErrorKind::WouldBlock => {
                         //println!("read needed to block");
