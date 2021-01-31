@@ -27,6 +27,7 @@ name = "chatter-client"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "cmp",
  "message",
 ]
 
@@ -35,6 +36,8 @@ name = "chatter-server"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "cmp",
+ "message",
 ]
 
 [[package]]
@@ -51,6 +54,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "cmp"
+version = "0.1.0"
+dependencies = [
+ "byteorder",
+]
+
+[[package]]
 name = "libc"
 version = "0.2.82"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -61,6 +71,7 @@ name = "message"
 version = "0.1.0"
 dependencies = [
  "bincode",
+ "cmp",
  "serde",
 ]
 
